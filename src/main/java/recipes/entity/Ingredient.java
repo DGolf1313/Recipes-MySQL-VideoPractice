@@ -25,11 +25,11 @@ public class Ingredient extends EntityBase {
 	public void setRecipeId(Integer recipeId) {
 		this.recipeId = recipeId;
 	}
-	public Unit getUnitId() {
+	public Unit getUnit() {
 		return unit;
 	}
-	public void setUnitId(Unit unitId) {
-		this.unit = unitId;
+	public void setUnit(Unit unit) {
+		this.unit = unit;
 	}
 	public String getIngredientName() {
 		return ingredientName;
