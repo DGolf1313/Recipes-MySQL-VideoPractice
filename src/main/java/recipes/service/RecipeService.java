@@ -22,7 +22,6 @@ public class RecipeService {
 		loadFromFile(SCHEMA_FILE);
 		loadFromFile(DATA_FILE);
 		
-		private RecipeDao recipeDao = new RecipeDao();
 	}
 	
 	public Recipe fetchRecipeById(Integer recipeId) {
