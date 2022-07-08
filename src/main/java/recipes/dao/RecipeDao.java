@@ -196,10 +196,11 @@ public class RecipeDao extends DaoBase {
 	}
 
 	public List<Recipe> fetchAllRecipes() {
-		String sql = "SELECT * FROM " + RECIPE_TABLE + " ORDER BY recipe_name";
+		String sql = "SELECT * FROM " + RECIPE_TABLE + " ORDER BY recipe_id";
 		
 		try(Connection conn = DbConnection.getConnection()){
 		 startTransaction(conn);
+		 
 		 try(PreparedStatement stmt = conn.prepareStatement(sql)){
 			 try(ResultSet rs = stmt.executeQuery()){
 				 List<Recipe> recipes = new LinkedList<>();
@@ -209,12 +210,67 @@ public class RecipeDao extends DaoBase {
 				 }
 				 return recipes;
 			 }
+		 } catch (Exception e) {
+			 rollbackTransaction(conn);
+			 throw new DbException(e);
 		 }
 		}catch(SQLException e) {
 			throw  new DbException(e);
 		}
-
 	}
 
 	
+	public List<Unit> fetchAllUnits() {
+		String sql = "SELECT * FROM " + UNIT_TABLE + " ORDER BY unit_name_singular";
+		
+		try(Connection conn = DbConnection.getConnection()){
+			startTransaction(conn);
+			
+			try(PreparedStatement stmt = conn.prepareStatement(sql)){
+				try(ResultSet rs = stmt.executeQuery()){
+					List<Unit> units = new LinkedList<>();
+					while(rs.next()){
+						units.add(extract(rs, Unit.class));
+					}
+					return units;
+				}
+			}
+			catch (Exception e) {
+				rollbackTransaction(conn);
+				throw new DbException(e);
+			}
+		} catch (SQLException e) {
+			throw new DbException(e);
+		}
+	}
+
+	public void addIngredientToRecipe(Ingredient ingredient) {
+		String sql = "INSERT INTO " + INGREDIENT_TABLE + " (recipe_id, unit_id, ingredient_name, instruction, ingredient_order, amount) " + "VALUES (?, ?, ?, ?, ?, ?) ";
+		
+		try(Connection conn = DbConnection.getConnection()) {
+			startTransaction(conn);
+			
+			try {
+				Integer order =  getNextSequenceNumber(conn, ingredient.getRecipeId(), INGREDIENT_TABLE, "recipe_id");
+				
+				try(PreparedStatement stmt = conn.prepareStatement(sql)) {
+					setParameter(stmt, 1, ingredient.getRecipeId(), Integer.class);
+					setParameter(stmt, 2, ingredient.getUnit().getUnitId(), Integer.class);
+					setParameter(stmt, 3, ingredient.getIngredientName(), String.class);
+					setParameter(stmt, 4, ingredient.getInstruction(), String.class);
+					setParameter(stmt, 5, order , Integer.class);
+					setParameter(stmt, 6, ingredient.getAmount(), Double.class);
+				
+				stmt.executeUpdate();
+				commitTransaction(conn);
+				}
+		}
+		catch (Exception e) {
+			rollbackTransaction(conn);
+			throw new DbException(e);
+			}
+		} catch (SQLException e) {
+			throw new DbException(e);
+		}
+	}
 }
