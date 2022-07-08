@@ -1,5 +1,6 @@
 package recipes.dao;
 
+import java.math.BigDecimal;
 import java.net.ConnectException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -45,7 +46,7 @@ public class RecipeDao extends DaoBase {
 					
 					try(ResultSet rs = stmt.executeQuery()){
 						if(rs.next()) {
-							
+							recipe = extract(rs, Recipe.class);
 						}
 					}
 				}
@@ -55,7 +56,7 @@ public class RecipeDao extends DaoBase {
 					recipe.getSteps().addAll(fetchRecipeSteps(conn, recipeId));
 					recipe.getCategroies().addAll(fetchRecipeCategories(conn, recipeId));
 				}
-				
+				commitTransaction(conn);
 				return Optional.ofNullable(recipe);
 			}
 			catch(Exception e) {
@@ -113,7 +114,7 @@ public class RecipeDao extends DaoBase {
 	private List<Ingredient> fetchRecipeIngredients(Connection conn, Integer recipeId) throws SQLException{
 		// @formatter:off
 		String sql = ""
-				+ "SELECT i.* u.unit_name_singular, u.unit_name.plural "
+				+ "SELECT i.*, u.unit_name_singular, u.unit_name_plural "
 				+ "FROM " + INGREDIENT_TABLE + " i "
 				+ "LEFT JOIN " + UNIT_TABLE + " u USING (unit_id) "	
 				+ "WHERE recipe_id = ? "
@@ -259,7 +260,7 @@ public class RecipeDao extends DaoBase {
 					setParameter(stmt, 3, ingredient.getIngredientName(), String.class);
 					setParameter(stmt, 4, ingredient.getInstruction(), String.class);
 					setParameter(stmt, 5, order , Integer.class);
-					setParameter(stmt, 6, ingredient.getAmount(), Double.class);
+					setParameter(stmt, 6, ingredient.getAmount(), BigDecimal.class);
 				
 				stmt.executeUpdate();
 				commitTransaction(conn);
@@ -270,6 +271,33 @@ public class RecipeDao extends DaoBase {
 			throw new DbException(e);
 			}
 		} catch (SQLException e) {
+			throw new DbException(e);
+		}
+	}
+
+	public void addStepToRecipe(Step step) {
+		String sql = "INSERT INTO " + STEP_TABLE + " (recipe_id, step_order, step_text)"
+				+ " VALUES (?, ?, ?)";
+		
+		try(Connection conn = DbConnection.getConnection()){
+			startTransaction(conn);
+			
+			Integer order = getNextSequenceNumber(conn, step.getRecipeId(), STEP_TABLE, "recipe_id");
+		
+			try(PreparedStatement stmt = conn.prepareStatement(sql)){
+				setParameter(stmt, 1, step.getRecipeId(), Integer.class);
+				setParameter(stmt, 2, order, Integer.class);
+				setParameter(stmt, 3, step.getStepText(), String.class);
+				
+				stmt.executeUpdate();
+				commitTransaction(conn);
+			}
+			catch (Exception e) {
+				rollbackTransaction(conn);
+				throw new DbException(e);
+			}
+			
+		}catch(SQLException e) {
 			throw new DbException(e);
 		}
 	}

@@ -8,6 +8,7 @@ import java.util.Scanner;
 
 import recipes.entity.Ingredient;
 import recipes.entity.Recipe;
+import recipes.entity.Step;
 import recipes.entity.Unit;
 import recipes.exception.DbException;
 import recipes.service.RecipeService;
@@ -23,7 +24,8 @@ public class Recipes {
 		"2) Add a recipe",
 		"3) List recipes",
 		"4) Select working recipe",
-		"5) Add ingredient to current recipe"
+		"5) Add ingredient to current recipe",
+		"6) Add step to current recipe"
 		);
 	//@formatter:on
 	
@@ -65,6 +67,10 @@ public class Recipes {
 				addIngredientToCurrentRecipe();
 				break;
 				
+			case 6:
+				addStepToCurrentRecipe();
+				break;
+				
 			default:
 				System.out.println("\n" + operation + "Is not valid, try again");
 				break;
@@ -76,6 +82,25 @@ public class Recipes {
 	}
 	
 	
+	private void addStepToCurrentRecipe() {
+		if(Objects.isNull(curRecipe)) {
+			System.out.println("\nPlease select a recipe first.");
+			return;
+		}
+		String stepText = getStringInput("Enter the step text");
+		
+		if(Objects.nonNull(stepText)) {
+			Step step = new Step();
+			
+			step.setRecipeId(curRecipe.getRecipeId());
+			step.setStepText(stepText);
+			
+			recipeService.addStep(step);
+			curRecipe = recipeService.fetchRecipeById(step.getRecipeId());
+		}
+	}
+
+
 	private void addIngredientToCurrentRecipe() {
 		if(Objects.isNull(curRecipe)) {
 			System.out.println("\nPlease select a recipe first.");
@@ -106,7 +131,7 @@ public class Recipes {
 		ingredient.setAmount(amount);
 		
 		recipeService.addIngredient(ingredient);
-		curRecipe = recipeService.fetchRecipeById(ingredient.getIngredientId());
+		curRecipe = recipeService.fetchRecipeById(ingredient.getRecipeId());
 	}
 
 
@@ -131,7 +156,7 @@ public class Recipes {
 	private List<Recipe> listRecipes() {
 		List<Recipe> recipes = recipeService.fetchRecipes();
 		
-		System.out.println("\nRecipes: ");
+		System.out.println("\nRecipes:");
 		
 		recipes.forEach(
 				recipe -> System.out.println("    " + recipe.getRecipeId() + ": " + recipe.getRecipeName()));
