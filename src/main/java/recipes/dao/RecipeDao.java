@@ -197,7 +197,7 @@ public class RecipeDao extends DaoBase {
 	}
 
 	public List<Recipe> fetchAllRecipes() {
-		String sql = "SELECT * FROM " + RECIPE_TABLE + " ORDER BY recipe_id";
+		String sql = "SELECT * FROM " + RECIPE_TABLE + " ORDER BY recipe_name";
 		
 		try(Connection conn = DbConnection.getConnection()){
 		 startTransaction(conn);
